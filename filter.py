@@ -81,13 +81,13 @@ class AsyncGroupedDomainResolver:
 
         return all_valid, all_failed
 
-    async def batch_resolve(self, domains: List[str], output_success: str, output_failed: str):
+    async def batch_resolve(self, domains: List[str], output_success: str, output_failed: str, max_rounds: int = 5):
         start_time = time.time()
         remaining_domains = domains[:]
         all_valid = []
         round_num = 1
 
-        while remaining_domains:
+        while remaining_domains and round_num <= max_rounds:
             valid, failed = await self.resolve_in_round(remaining_domains, round_num)
             all_valid.extend(valid)
             remaining_domains = failed
@@ -99,6 +99,11 @@ class AsyncGroupedDomainResolver:
                 break
 
             round_num += 1
+
+        # 检查是否因为达到最大轮数而终止
+        if round_num > max_rounds and remaining_domains:
+            if self.verbose:
+                print(f"⏹️ 已完成 {max_rounds} 轮解析，达到最大轮数限制，任务终止。", flush=True)
 
         total_elapsed = time.time() - start_time
         final_success_rate = (len(all_valid) / len(domains)) * 100 if domains else 0
@@ -112,6 +117,7 @@ class AsyncGroupedDomainResolver:
             print(f"✅ 有效域名: {len(all_valid)}", flush=True)
             print(f"❌ 最终失败: {len(remaining_domains)}", flush=True)
             print(f"📈 成功率: {final_success_rate:.2f}%", flush=True)
+            print(f"🔄 执行轮数: {round_num-1}/{max_rounds}", flush=True)
             print(f"⏱ 总耗时: {total_elapsed:.1f}s", flush=True)
             print(f"💾 成功结果: {output_success}", flush=True)
             print(f"💾 失败结果: {output_failed}", flush=True)
@@ -128,12 +134,13 @@ async def main():
     OUTPUT_SUCCESS = "./output/valid_domains.txt"
     OUTPUT_FAILED = "./output/failed_domains.txt"
 
-    resolver = AsyncGroupedDomainResolver(timeout=3, concurrency_per_group=50, verbose=True)
+    resolver = AsyncGroupedDomainResolver(timeout=3, concurrency_per_group=20, verbose=True)
     print("🔍 正在获取域名列表...", flush=True)
     domains = await resolver.fetch_domains(SOURCE_URL)
     print(f"📦 获取到 {len(domains)} 个域名", flush=True)
 
-    await resolver.batch_resolve(domains, OUTPUT_SUCCESS, OUTPUT_FAILED)
+    # 最多解析5轮
+    await resolver.batch_resolve(domains, OUTPUT_SUCCESS, OUTPUT_FAILED, max_rounds=5)
 
 
 if __name__ == "__main__":
