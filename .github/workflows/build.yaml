@@ -2,7 +2,7 @@ name: Domain Resolver and Filter
 
 on:
   schedule:
-    - cron: '0 19 * * *'  # 每天 UTC+0 19:00 自动运行
+    - cron: '0 19 * * 1'  # 每天 UTC+0 19:00 自动运行
   workflow_dispatch:
 
 permissions:
