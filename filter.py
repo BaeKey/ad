@@ -174,7 +174,7 @@ async def main():
     ]
     OUTPUT_SUCCESS = "./output/valid_domains.txt"
 
-    resolver = AsyncGroupedDomainResolver(timeout=3, concurrency_per_group=10, verbose=True)
+    resolver = AsyncGroupedDomainResolver(timeout=3, concurrency_per_group=20, verbose=True)
     
     print("🔍 正在获取域名列表...", flush=True)
     domains = await resolver.fetch_domains(SOURCE_URL)
